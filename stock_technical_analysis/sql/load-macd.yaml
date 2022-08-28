@@ -1,0 +1,14 @@
+create_temp: >
+  CREATE TEMP TABLE macd_temp 
+  ON COMMIT DROP
+  AS
+  SELECT * 
+  FROM macd_template
+  WITH NO DATA;
+copy: copy macd_temp(timestamp, close, ema12, ema26, macd, signal, hist) from STDIN DELIMITER ',' CSV HEADER;
+insert: >
+  INSERT INTO {table} (timestamp, close, ema12, ema26, macd, signal, hist)
+  select timestamp, close, ema12, ema26, macd, signal, hist
+  from macd_temp
+  where timestamp > '{timestamp}'
+  order by timestamp;

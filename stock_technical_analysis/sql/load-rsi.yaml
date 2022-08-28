@@ -1,0 +1,14 @@
+create_temp: >
+  CREATE TEMP TABLE rsi_temp 
+  ON COMMIT DROP
+  AS
+  SELECT * 
+  FROM rsi_template
+  WITH NO DATA;
+copy: copy rsi_temp(timestamp, close, gain, loss, avg_gain, avg_loss, rs, rsi) from STDIN DELIMITER ',' CSV HEADER;
+insert: >
+  INSERT INTO {table} (timestamp, close, gain, loss, avg_gain, avg_loss, rs, rsi)
+  select timestamp, close, gain, loss, avg_gain, avg_loss, rs, rsi
+  from rsi_temp
+  where timestamp > '{timestamp}'
+  order by timestamp;

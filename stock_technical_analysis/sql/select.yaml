@@ -1,0 +1,13 @@
+rsi_cols: index, timestamp, close, gain, loss, avg_gain, avg_loss, rs, rsi
+macd_cols: index, timestamp, close, ema12, ema26, macd, signal, hist
+load_stocks: SELECT timestamp, close FROM {stock} ORDER BY timestamp;
+update_rsi: >
+  SELECT timestamp, close FROM {stock} 
+  where timestamp > (select timestamp from {stock}_rsi order by timestamp desc limit 1) 
+  ORDER BY timestamp;
+update_macd: >
+  SELECT timestamp, close FROM {stock} 
+  where timestamp > (select timestamp from {stock}_macd order by timestamp desc limit 1) 
+  ORDER BY timestamp;
+pre_rsi: select timestamp, close, gain, loss, avg_gain, avg_loss, rs, rsi from {stock}_rsi order by timestamp desc limit 1;
+pre_macd: select timestamp, close, ema12, ema26, macd, signal, hist from {stock}_macd order by timestamp desc limit 1;

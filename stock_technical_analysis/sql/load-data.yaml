@@ -1,0 +1,14 @@
+create_temp: >
+  CREATE TEMP TABLE stock_temp 
+  ON COMMIT DROP
+  AS
+  SELECT * 
+  FROM stock_template
+  WITH NO DATA;
+copy: copy stock_temp(timestamp, open, high, low, close, volume) from STDIN DELIMITER ',' CSV HEADER;
+insert: >
+  INSERT INTO {table}(timestamp, open, high, low, close, volume)
+  select timestamp, open, high, low, close, volume
+  from stock_temp
+  where timestamp > '{timestamp}'
+  order by timestamp;
