@@ -1,10 +1,6 @@
 import sys
-from yaml.loader import SafeLoader
 
 from manage import data, data_loading
-
-rsi_col = ['index', 'timestamp', 'close', 'gain',
-           'loss', 'avg_gain', 'avg_loss', 'rs', 'rsi']
 
 
 def create_tables(*args):
@@ -48,10 +44,6 @@ def help():
     with open("./config/help.txt", 'r') as f:
         doc = f.read()
     print(doc)
-
-
-def display(*args):
-    pass
 
 
 def analyse(*args):
@@ -102,12 +94,13 @@ def update(*args):
 
 
 if __name__ == "__main__":
-    # try:
-    if len(sys.argv) > 2:
-        globals()[sys.argv[1]](*sys.argv[2:])
-    else:
-        globals()[sys.argv[1]]()
-    # except KeyError as ex:
-    #     print(f"{sys.argv[1]} method not available. Please check valid options with 'python manage.py help'")
-    # except Exception as ex:
-    #     print("Error:",ex)
+    try:
+        if len(sys.argv) > 2:
+            globals()[sys.argv[1]](*sys.argv[2:])
+        else:
+            globals()[sys.argv[1]]()
+    except KeyError as ex:
+        print(
+            f"{sys.argv[1]} method not available. Please check valid options with 'python manage.py help'")
+    except Exception as ex:
+        print("Error:", ex)

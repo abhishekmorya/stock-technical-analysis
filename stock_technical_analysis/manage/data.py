@@ -325,7 +325,7 @@ def view_analysis(uphist, lowhist, uprsi, lowrsi, query_num=1):
         if curser.rowcount > 0:
             res = curser.fetchall()
         else:
-            raise ValueError("No Analysis available for date:", date)
+            raise ValueError("No Analysis available")
         return res
     except psycopg2.DatabaseError as ex:
         print(ex.pgerror)
