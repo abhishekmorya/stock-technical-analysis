@@ -1,0 +1,24 @@
+1: >
+  select * from analytic_vw
+  where (rsi <= {uprsi} and rsi >= {lowrsi})
+  and hist <= {uphist} and hist >= {lowhist}
+  order by hist, rsi;
+2: >
+  select * from analytic_vw
+  where rsi <= {uprsi}
+  order by rsi;
+
+3: >
+  select * from analytic_vw
+  where rsi >= {lowrsi}
+  order by rsi;
+
+4: >
+  select * from analytic_vw
+  where abs(hist) <= {uphist}
+  order by abs(hist);
+
+5: >
+  select * from analytic_vw
+  where abs(hist) >= {lowhist}
+  order by abs(hist);

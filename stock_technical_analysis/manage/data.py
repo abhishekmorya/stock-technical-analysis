@@ -1,14 +1,15 @@
-from sqlite3 import DatabaseError
 import psycopg2
 import pandas as pd
 from configparser import ConfigParser
 import yaml
 from yaml.loader import SafeLoader
-import datetime
+from datetime import datetime
+
 from manage.utils import timeit
 
 with open('./config/conf.yaml', 'r') as f:
     conf = yaml.load(f, Loader=SafeLoader)
+
 
 def database_conn():
     """Connects to database specified in database.ini config file.
@@ -60,6 +61,7 @@ def create_template_tables():
         con.close()
         curser.close()
 
+
 @timeit
 def create_tables(stock):
     """
@@ -76,7 +78,7 @@ def create_tables(stock):
         )
         curser.execute(query)
         con.commit()
-        print(f"{stock}", end = " ")
+        print(f"{stock}", end=" ")
     except (psycopg2.DatabaseError, Exception) as e:
         print(e)
     finally:
@@ -84,7 +86,7 @@ def create_tables(stock):
         con.close()
 
 
-def get_timestamp(table, desc = True):
+def get_timestamp(table, desc=True):
     """
     Returns the last or first timestamp value of provided table based on desc value.
     if desc=True -> Last timestamp
@@ -98,7 +100,7 @@ def get_timestamp(table, desc = True):
         curser.execute(query)
         res = curser.fetchone()
         return res[0] if res else None
-    except(psycopg2.DatabaseError, Exception) as e:
+    except (psycopg2.DatabaseError, Exception) as e:
         print(e)
     finally:
         curser.close()
@@ -115,8 +117,8 @@ def rsi_macd_init(stock):
         curser = con.cursor()
         with open('./sql/insert-stock-update.sql', 'r') as f:
             sql = f.read()
-        rsitable=f"{stock}_rsi"
-        macdtable=f"{stock}_macd"
+        rsitable = f"{stock}_rsi"
+        macdtable = f"{stock}_macd"
         rsi_t = get_timestamp(rsitable)
         macd_t = get_timestamp(macdtable)
         rsi_t = datetime.datetime(1970, 1, 1) if not rsi_t else rsi_t
@@ -131,11 +133,12 @@ def rsi_macd_init(stock):
         )
         curser.execute(query)
         con.commit()
-    except(psycopg2.DatabaseError, Exception) as e:
+    except (psycopg2.DatabaseError, Exception) as e:
         print(e)
     finally:
         curser.close()
         con.close()
+
 
 def load(table, sql, csv_path):
     """
@@ -145,10 +148,10 @@ def load(table, sql, csv_path):
         con = database_conn()
         curser = con.cursor()
         last = get_timestamp(table)
-        timestamp = datetime.datetime(1970, 1, 1) if not last else last
+        timestamp = datetime(1970, 1, 1) if not last else last
         create_temp = sql['create_temp']
         copy = sql['copy']
-        insert = sql['insert'].format(table=table,timestamp=timestamp)
+        insert = sql['insert'].format(table=table, timestamp=timestamp)
 
         curser.execute(create_temp)
         with open(csv_path, 'r') as f:
@@ -162,6 +165,7 @@ def load(table, sql, csv_path):
     finally:
         curser.close()
         con.close()
+
 
 def load_stock_table(stock, csv_path):
     """
@@ -204,7 +208,7 @@ def db_to_df(columns, query):
         data = cursor.fetchall()
         df = pd.DataFrame(data, columns=columns)
         return df
-    except(psycopg2.DatabaseError, Exception) as e:
+    except (psycopg2.DatabaseError, Exception) as e:
         print(e)
     finally:
         cursor.close()
@@ -228,7 +232,7 @@ def get_last_calc(stock):
         curser.execute(macd_query)
         col_macd = [desc[0] for desc in curser.description]
         macd = dict(zip(col_macd, curser.fetchone()))
-        return {'rsi':rsi, 'macd': macd}
+        return {'rsi': rsi, 'macd': macd}
     except psycopg2.DatabaseError as ex:
         print(ex.pgerror())
     except Exception as ex:
@@ -236,7 +240,7 @@ def get_last_calc(stock):
     finally:
         curser.close()
         con.close()
-        
+
 
 def update_rsi(stock, nexts):
     """
@@ -259,6 +263,7 @@ def update_rsi(stock, nexts):
         curser.close()
         con.close()
 
+
 def update_macd(stock, nexts):
     """
     Updates macd with provided data
@@ -271,6 +276,75 @@ def update_macd(stock, nexts):
         con = database_conn()
         curser = con.cursor()
         curser.execute(query)
+        con.commit()
+    except psycopg2.DatabaseError as ex:
+        print(ex.pgerror)
+    except Exception as ex:
+        print(ex)
+    finally:
+        curser.close()
+        con.close()
+
+
+def create_analytic_view(stocklist, date):
+    """Create union of all calcs to one view"""
+    try:
+        con = database_conn()
+        curser = con.cursor()
+
+        query = """(select '{stock}' stock, r.timestamp, r.close, 
+        m.macd, m.signal, m.hist, r.rsi  
+        from {stock}_rsi r inner join {stock}_macd m 
+        on m.timestamp = r.timestamp 
+        where r.timestamp = '{date}')"""
+        queries = [query.format(stock=stock, date=date) for stock in stocklist]
+        with open("./sql/analytic_view.sql", "r") as f:
+            sql = f.read()
+        sql = sql.format(queries=" UNION ".join(queries))
+        curser.execute(sql)
+        con.commit()
+    except psycopg2.DatabaseError as ex:
+        print(ex.pgerror)
+    except Exception as ex:
+        print(ex)
+    finally:
+        curser.close()
+        con.close()
+
+
+def view_analysis(uphist, lowhist, uprsi, lowrsi, query_num=1):
+    """View analysis as per setting of rsi and hist"""
+    try:
+        con = database_conn()
+        curser = con.cursor()
+        with open("./sql/view.yaml", "r") as f:
+            sql = yaml.load(f, Loader=SafeLoader)[query_num]
+        sql = sql.format(uphist=uphist, lowhist=lowhist,
+                         uprsi=uprsi, lowrsi=lowrsi)
+        curser.execute(sql)
+        if curser.rowcount > 0:
+            res = curser.fetchall()
+        else:
+            raise ValueError("No Analysis available for date:", date)
+        return res
+    except psycopg2.DatabaseError as ex:
+        print(ex.pgerror)
+    except Exception as ex:
+        print(ex)
+    finally:
+        curser.close()
+        con.close()
+
+
+def clear_rsi_macd(stock):
+    """Recalcultes the rsi/macd tables"""
+    trunc_rsi = f"truncate table {stock}_rsi; alter sequence {stock}_rsi_index_seq restart with 1;"
+    trunc_macd = f"truncate table {stock}_macd; alter sequence {stock}_macd_index_seq restart with 1;"
+    try:
+        con = database_conn()
+        curser = con.cursor()
+        curser.execute(trunc_rsi)
+        curser.execute(trunc_macd)
         con.commit()
     except psycopg2.DatabaseError as ex:
         print(ex.pgerror)

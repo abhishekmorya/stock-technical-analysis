@@ -1,5 +1,10 @@
-api_url: https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={stock}.BSE&apikey=XSQOR70VDTX2C9AI&datatype=csv
-data_dir: /home/abhishek/projects/stockdata/stock-analysis/data/
+api_url: https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol={stock}.BSE&outputsize=compact&apikey={api_key}&datatype=csv
+api_key: <your api key>
+data_dir: ../../data/
 db_params: ./config/database.ini
 sql_path: ./sql
 offline: False
+uprsi: 68
+lowrsi: 58
+uphist: 1
+lowhist: -1

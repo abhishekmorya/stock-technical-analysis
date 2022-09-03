@@ -1,0 +1,28 @@
+Use application with command line interface. Each command starts with python main.py as main.py
+is the starting point script.
+
+python main.py create_templates > Creates templates for stock, rsi and macd
+
+python main.py create_tables > Creates stock, rsi, macd tables for all tables in table list
+
+python main.py create_tables <stock code> > Creates stock, rsi, macd tables for provided table
+
+python main.py load > Loads data for all stocks in stock list
+
+python main.py load <stock code> > Loads data for a particular stock
+
+python main.py init_calc > Does initial calculation for rsi and macd tables for all stocks
+
+python main.py init_calc <stock code> > Does initial calculation for rsi and macd for particular stock
+
+python main.py update > Update rsi/macd for all tables for missing dates
+
+python main.py update <stock code> > Update rsi/macd for stock provided for missing dates
+
+python main.py recalculate > Recalculates rsi and macd by truncating existing data for all stocks
+
+python main.py recalculate <stock code> > Recalculates rsi and macd by truncating existing data for provided stocks
+
+python main.py analyse <dd/mm/yyyy> > Creates analytic view for provided date
+
+python main.py view <query num> > Views the analytic view data as per the query

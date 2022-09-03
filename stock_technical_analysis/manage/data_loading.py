@@ -4,6 +4,7 @@ import yaml
 import re
 from yaml.loader import SafeLoader
 from time import sleep
+import pandas as pd
 
 from manage import data
 from manage.utils import timeit
@@ -12,6 +13,7 @@ from manage import macd_calc, rsi_calc
 with open('./config/conf.yaml', 'r') as f:
     conf = yaml.load(f, Loader=SafeLoader)
 api_url = conf['api_url']
+api_key = conf['api_key']
 data_dir = conf['data_dir']
 offline = conf['offline']
 
@@ -20,6 +22,7 @@ with open('./config/stock-list.yaml', 'r') as f:
     stocklist = yaml.load(f, Loader=SafeLoader)['stocklist']
 
 
+@timeit
 def create_data_tables():
     """
     Compiles table name for special charactors of each stock.
@@ -44,7 +47,7 @@ def load_stock(stock):
         print("offline mode")
         filepath = os.path.join(data_dir, f'stock_{stock}.csv')
     else:
-        url = api_url.format(stock=stock)
+        url = api_url.format(stock=stock, api_key=api_key)
         res = req.get(url)
         filepath = os.path.join(data_dir, f'stock_{stock}.csv')
         with open(filepath, 'w') as f:
@@ -54,6 +57,7 @@ def load_stock(stock):
     print(stock, end=" ")
 
 
+@timeit
 def load_all_stocks():
     """
     Fills all stocks with current available data from api
@@ -61,10 +65,12 @@ def load_all_stocks():
     count = 0
     for stock in stocklist:
         if count == 5:
-            sleep(60)
+            if not offline:
+                sleep(60)
             count = 0
         load_stock(stock)
         count += 1
+    print(f"{len(stocklist)} stocks")
 
 
 @timeit
@@ -83,17 +89,18 @@ def load_calc(stock):
 
     filepath = os.path.join(data_dir, f'rsi_{stock}.csv')
     print(filepath)
-    rsi_calcs.to_csv(filepath, index = False)
+    rsi_calcs.to_csv(filepath, index=False)
     data.load_rsi_table(stock, filepath)
 
     filepath = os.path.join(data_dir, f'macd_{stock}.csv')
     print(filepath)
-    macd_calcs.to_csv(filepath, index = False)
+    macd_calcs.to_csv(filepath, index=False)
     data.load_macd_table(stock, filepath)
 
-    print(stock, end = " ")
+    print(stock, end=" ")
 
 
+@timeit
 def load_all_calc():
     """
     Update rsi and macd tables with macd and rsi values for all stocks in stocklist.
@@ -101,6 +108,8 @@ def load_all_calc():
     """
     for stock in stocklist:
         load_calc(stock)
+    print(f"{len(stocklist)} stocks")
+
 
 @timeit
 def update_calc(stock):
@@ -123,11 +132,12 @@ def update_calc(stock):
     except ValueError as ex:
         print(ex)
 
+
 def update_rsi(stock, prev):
     """
     Update rsi for next day by data of previous day
     """
-    
+
     with open("./sql/select.yaml", "r") as f:
         sql = yaml.load(f, Loader=SafeLoader)
     columns, values = data.read_table(sql['update_rsi'].format(stock=stock))
@@ -137,8 +147,10 @@ def update_rsi(stock, prev):
     for d in values:
         n = rsi_calc.next(prev, d[columns.index('close')])
         prev = n
-        nexts.append((d[columns.index('timestamp')].strftime("%Y/%m/%d"),*prev.values()))
+        nexts.append(
+            (d[columns.index('timestamp')].strftime("%Y/%m/%d"), *prev.values()))
     return nexts
+
 
 def update_macd(stock, prev):
     """
@@ -153,11 +165,52 @@ def update_macd(stock, prev):
     for d in values:
         n = macd_calc.next(prev, d[columns.index('close')])
         prev = n
-        nexts.append((d[columns.index('timestamp')].strftime("%Y/%m/%d"),*prev.values()))
+        nexts.append(
+            (d[columns.index('timestamp')].strftime("%Y/%m/%d"), *prev.values()))
     return nexts
 
 
+@timeit
 def update_all_calc():
     """Updates calc for all stocks"""
     for stock in stocklist:
         update_calc(stock)
+    print(f"{len(stocklist)} stocks")
+
+
+@timeit
+def analyse_calcs(date):
+    """Creates view of analysis"""
+    check = re.compile("^(\d{2})\/(\d{2})\/(\d{4})$")
+    if check.match(date) is not None:
+        data.create_analytic_view(stocklist, date)
+    else:
+        raise ValueError("Date is invalid. Please use <dd/mm/yyyy> format.")
+
+
+def view_analysis(query_num=1):
+    """Prints the stocks as per setting of rsi and macd"""
+    try:
+        res = data.view_analysis(
+            conf['uphist'], conf['lowhist'], conf['uprsi'], conf['lowrsi'], query_num)
+        columns = ['stock', 'timestamp', 'close',
+                   'macd', 'signal', 'hist', 'rsi']
+        df = pd.DataFrame(res, columns=columns)
+        print(df.to_string())
+    except Exception as ex:
+        print(ex)
+
+
+@timeit
+def recalculate(stock):
+    """Recalculates the rsi and macd based on data in stock tables"""
+    data.clear_rsi_macd(stock)
+    load_calc(stock)
+
+
+@timeit
+def recalculate_all():
+    """Recalculates the rsi and macd for all stock based on data in stock tables."""
+    for stock in stocklist:
+        recalculate(stock)
+    print(f"{len(stocklist)} stocks")

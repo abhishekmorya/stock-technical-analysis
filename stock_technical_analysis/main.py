@@ -1,25 +1,32 @@
 import sys
+from yaml.loader import SafeLoader
 
-from manage.rsi_calc import rsi_calc
 from manage import data, data_loading
 
-rsi_col= ['index', 'timestamp', 'close', 'gain', 'loss', 'avg_gain', 'avg_loss', 'rs', 'rsi']
+rsi_col = ['index', 'timestamp', 'close', 'gain',
+           'loss', 'avg_gain', 'avg_loss', 'rs', 'rsi']
+
 
 def create_tables(*args):
     """
     Creates stock, rsi, macd tables for all stocks in 'stocklist'
     """
-    if len(args) > 0 and len(args[0]) > 0:
+    if len(args) == 1 and len(args[0]) > 0:
         data.create_tables(args[0])
     else:
         data_loading.create_data_tables()
 
 
-def load_data(*args):
+def create_templates(*args):
+    """create template tables for stock, rsi and macd"""
+    data.create_template_tables()
+
+
+def load(*args):
     """
     Loads data from api to respective stock table.
     """
-    if len(args) > 0 and len(args[0]) > 0:
+    if len(args) == 1 and len(args[0]) > 0:
         data_loading.load_stock(args[0])
     else:
         data_loading.load_all_stocks()
@@ -38,12 +45,40 @@ def test_connection():
 
 
 def help():
-    message = "Help is under process"
-    print(message)
+    with open("./config/help.txt", 'r') as f:
+        doc = f.read()
+    print(doc)
 
 
 def display(*args):
-    data_loading.update_calc(args[0])
+    pass
+
+
+def analyse(*args):
+    """Creates the analytic view"""
+    if len(args) == 1 and len(args[0]) > 0:
+        data_loading.analyse_calcs(args[0])
+    else:
+        print("provide date as 'python main.py view 29/08/2022' <dd/mm/yyyy> format.")
+
+
+def recalculate(*args):
+    """Recalculates the rsi/macd values based on data from stock table"""
+    if len(args) == 1 and len(args[0]) > 0:
+        data_loading.recalculate(args[0])
+    else:
+        data_loading.recalculate_all()
+
+
+def view(*args):
+    """To View the analysis saved in analytic_vw"""
+    if len(args) == 1 and len(args[0]) > 0:
+        if not str.isnumeric(args[0]):
+            raise ValueError(
+                "Only numeric value is allowed for Query number. Check 'python main.py help'")
+        data_loading.view_analysis(query_num=int(args[0]))
+    else:
+        data_loading.view_analysis(1)
 
 
 def init_calc(*args):
@@ -56,14 +91,15 @@ def init_calc(*args):
         data_loading.load_all_calc()
 
 
-def update_calc(*args):
+def update(*args):
     """
     Update calc to rsi and macd for missing dates present in stocks
     """
-    if len(args) > 0 and len(args[0]) > 0:
+    if len(args) == 1 and len(args[0]) > 0:
         data_loading.update_calc(args[0])
     else:
         data_loading.update_all_calc()
+
 
 if __name__ == "__main__":
     # try:
