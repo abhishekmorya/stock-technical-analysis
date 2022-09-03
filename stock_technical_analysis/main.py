@@ -100,7 +100,6 @@ if __name__ == "__main__":
         else:
             globals()[sys.argv[1]]()
     except KeyError as ex:
-        print(
-            f"{sys.argv[1]} method not available. Please check valid options with 'python manage.py help'")
+        print(f"{sys.argv[1]} method not available. Please check valid options with 'python manage.py help'")
     except Exception as ex:
         print("Error:", ex)
