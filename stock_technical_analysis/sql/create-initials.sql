@@ -30,3 +30,16 @@ create table if not exists {stock}_macd (
     signal float,
     hist float
 );
+
+create table if not exists {stock}_stoch (
+    index serial not null primary key,
+    timestamp timestamp without time zone not null,
+    close float not null,
+    high float not null,
+    low float not null,
+    high_high float,
+    low_low float,
+    cl_ll float,
+    hh_ll float,
+    per_k float
+)

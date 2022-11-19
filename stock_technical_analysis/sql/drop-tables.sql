@@ -1,6 +1,7 @@
 -- \i filepath
-DROP TABLE lt_rsi;
-DROP TABLE lt_macd;
-DROP TABLE stock_template;
-DROP TABLE macd_template;
-DROP TABLE rsi_template;
+DROP TABLE IF EXISTS lt_rsi;
+DROP TABLE IF EXISTS lt_macd;
+DROP TABLE IF EXISTS stock_template;
+DROP TABLE IF EXISTS macd_template;
+DROP TABLE IF EXISTS rsi_template;
+DROP TABLE IF EXISTS stoch_template;

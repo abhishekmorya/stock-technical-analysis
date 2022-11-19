@@ -79,6 +79,7 @@ def init_calc(*args):
     """
     if len(args) > 0 and len(args[0]) > 0:
         data_loading.load_calc(args[0])
+        data_loading.update_stoch(args[0])
     else:
         data_loading.load_all_calc()
 
@@ -89,11 +90,21 @@ def update(*args):
     """
     if len(args) == 1 and len(args[0]) > 0:
         data_loading.update_calc(args[0])
+        data_loading.update_stoch(args[0])
     else:
         data_loading.update_all_calc()
 
+def test(*args):
+    if len(args) == 1 and len(args[0]) > 0:
+        data_loading.update_stoch(args[0])
+    else:
+        print("Arguments not passed")
 
 if __name__ == "__main__":
+    # if len(sys.argv) > 2:
+    #     globals()[sys.argv[1]](*sys.argv[2:])
+    # else:
+    #     globals()[sys.argv[1]]()
     try:
         if len(sys.argv) > 2:
             globals()[sys.argv[1]](*sys.argv[2:])

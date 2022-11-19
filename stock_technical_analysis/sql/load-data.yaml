@@ -5,7 +5,7 @@ create_temp: >
   SELECT * 
   FROM stock_template
   WITH NO DATA;
-copy: copy stock_temp(timestamp, open, high, low, close, volume) from STDIN DELIMITER ',' CSV HEADER;
+copy: copy stock_temp(timestamp, open, high, low, close, adjusted_close, volume, dividend_amount, split_coefficient) from STDIN DELIMITER ',' CSV HEADER;
 insert: >
   INSERT INTO {table}(timestamp, open, high, low, close, volume)
   select timestamp, open, high, low, close, volume
