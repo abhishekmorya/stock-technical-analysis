@@ -293,9 +293,11 @@ def create_analytic_view(stocklist, date):
         curser = con.cursor()
 
         query = """(select '{stock}' stock, r.timestamp, r.close, 
-        m.macd, m.signal, m.hist, r.rsi  
+        m.macd, m.signal, m.hist, r.rsi, s.per_k
         from {stock}_rsi r inner join {stock}_macd m 
         on m.timestamp = r.timestamp 
+        inner join {stock}_stoch s 
+        on m.timestamp = s.timestamp 
         where r.timestamp = '{date}')"""
         queries = [query.format(stock=stock, date=date) for stock in stocklist]
         with open("./sql/analytic_view.sql", "r") as f:
@@ -337,9 +339,9 @@ def view_analysis(uphist, lowhist, uprsi, lowrsi, query_num=1):
 
 
 def clear_rsi_macd(stock):
-    """Recalcultes the rsi/macd tables"""
-    trunc_rsi = f"truncate table {stock}_rsi; alter sequence {stock}_rsi_index_seq restart with 1;"
-    trunc_macd = f"truncate table {stock}_macd; alter sequence {stock}_macd_index_seq restart with 1;"
+    """Clear calculations of rsi/macd tables"""
+    trunc_rsi = f"truncate table {stock}_rsi RESTART IDENTITY"
+    trunc_macd = f"truncate table {stock}_macd RESTART IDENTITY"
     try:
         con = database_conn()
         curser = con.cursor()
@@ -353,3 +355,42 @@ def clear_rsi_macd(stock):
     finally:
         curser.close()
         con.close()
+
+
+def stoch_calc_update(stock, period, timestamp):
+    """Updating stochastic calculation for provided stock"""
+    try:
+        conn = database_conn()
+        cursor = conn.cursor()
+        with open('./sql/stochastic_calc_update.sql', 'r') as f:
+            sql = f.read()
+        sql = sql.format(period = period, stock=stock, timestamp=timestamp)
+        cursor.execute(sql)
+        conn.commit()
+    except psycopg2.DatabaseError as ex:
+        print(ex.pgerror)
+    except Exception as ex:
+        print(ex)
+    finally:
+        cursor.close()
+        conn.close()
+
+
+def clear_stoch_calc(stock):
+    """
+    Clear the data in stochastic calculation
+    """
+    try:
+        conn = database_conn()
+        cursor = conn.cursor()
+        sql = f"TRUNCATE TABLE {stock}_stoch RESTART IDENTITY"
+        cursor.execute(sql)
+        conn.commit()
+    except psycopg2.DatabaseError as ex:
+        print(ex.pgerror)
+    except Exception as ex:
+        print(ex)
+    finally:
+        cursor.close()
+        conn.close()
+

@@ -62,7 +62,7 @@ Now we are all set to use the **stock analysis** application
 ## Few Points about application
 - There are 98 large cap stocks are listed in the `conf.yaml` file under `config` directory. Command for all stocks means the command for this list of stocks. This list can be updated as per the needs.
 - By default it is loading data from <https://www.alphavantage.co> api. For more info check its [documentation](https://www.alphavantage.co/documentation/)
-- For each stock three tables will be created for stock, stock rsi calculation, stock macd calculation namly ***stock***, ***stock_rsi*** and ***stock_macd*** respectively.
+- For each stock three tables will be created for stock, stock rsi calculation, stock macd calculation and stochastic namly ***stock***, ***stock_rsi***, ***stock_macd*** and ***stock_stoch*** respectively.
 - The analysis feature of the api will provide list of stocks based on the filter conditions preset in the application.
 - Application only focused on the stocks listed in BSE. So stock code should be provided from the BSE listings. e.g. TCS for Tata Consultancy Service, RELIANCE for Reliance Industries, AXISBANK for Axis Bank. However it is always a choice to analyse from NSE. For that change the api url, drop the database and recreate tables.
 
@@ -70,7 +70,7 @@ Now we are all set to use the **stock analysis** application
 There are four features of the application. These features can be used by running commands from command line in windows or from terminal in linux/MAC.
 The four features are
 1. load: to load the stocks from api to database tables
-2. calculate rsi/macd: to calculate rsi and macd from data in stocks table and load to respective tables
+2. calculate : to calculate rsi, stochastic and macd from data in stocks table and load to respective tables
 3. analyse: creates a view named analytic_vw for provided day date and stock name.
 4. view: using different analysis filters fetching data from analytic_vw view.
 
@@ -93,25 +93,25 @@ $ python main.py load RELIANCE
 > **TIP**
 > You can use `outputsize=full` at first time setup. After completion move the csv files generated in data_dir to seperate location and change the outputsize to compact as `outputsize=compact` again. Because when we run load again it just updates the new dates does not replace the previous dates in order to fasten the process. So there is no point to retrieve the 20 years data again.
 
-### Calculate RSI/MACD
+### Calculate RSI/MACD/STOCH
 There are three modes when doing the calculation.
 
 **Calculating data for first time**
-This Calculates the RSI and MACD for all the dates in stock table and updates the RSI and MACD for respective stock. The second command is for calculating for a perticular stock.
+This Calculates for all the dates in stock table and updates the calculation for respective stock. The second command is for calculating for a perticular stock.
 ```sh
 $ python main.py init_calc
 $ python main.py init_calc RELIANCE
 ```
 
 **Updating the calculation**
-This updates the RSI and MACD calculation tables with new dates. New dates will be taken from stock table. The second command for calculation update for a perticular stock.
+This updates the calculation tables with new dates. New dates will be taken from stock table. The second command for calculation update for a perticular stock.
 ```sh
 $ python main.py update
 $ python main.py update RELIANCE
 ```
 
 **Recalculation**
-There are chances that something goes wrong about calculation and you feel tables are incorrectly calculated. No Worries. Run below command to recalculate. It will truncate the rsi and macd tables and do the calculation for all data in stock tables.
+There are chances that something goes wrong about calculation and you feel tables are incorrectly calculated. No Worries! Run below command to recalculate. It will truncate the rsi, stochastic and macd tables and do the calculation for all data in stock tables.
 Same can be done for a perticular stock by second command.
 ```sh
 $ python main.py recalculate
@@ -130,8 +130,8 @@ This part is to view the analysis by different sql queries. These queries are pr
 $ python main.py view 1
 ```
 By default query 1 will run if no number provided. The values of uprsi, lowrsi, uphist, lowhist can be reconfigured as per your choice in `conf.yaml` in `config` directory.
-List of preset queries. 
-***And of cource! you can have custom analysis with custom queries using database seperately.***
+List of preset queries.
+***And of course! you can have custom analysis with custom queries using database seperately.***
 
 ```sql
 --1

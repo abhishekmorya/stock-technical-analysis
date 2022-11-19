@@ -1,0 +1,1 @@
+TRUNCATE TABLE {stock}_stoch RESTART IDENTITY;

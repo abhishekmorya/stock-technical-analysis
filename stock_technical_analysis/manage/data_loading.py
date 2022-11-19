@@ -1,14 +1,14 @@
-import requests as req
 import os
-import yaml
 import re
-from yaml.loader import SafeLoader
 from time import sleep
-import pandas as pd
 
-from manage import data
+import pandas as pd
+import requests as req
+import yaml
+from yaml.loader import SafeLoader
+
+from manage import data, macd_calc, rsi_calc, stoch_calc
 from manage.utils import timeit
-from manage import macd_calc, rsi_calc
 
 with open('./config/conf.yaml', 'r') as f:
     conf = yaml.load(f, Loader=SafeLoader)
@@ -96,8 +96,7 @@ def load_calc(stock):
     print(filepath)
     macd_calcs.to_csv(filepath, index=False)
     data.load_macd_table(stock, filepath)
-
-    print(stock, end=" ")
+    print(f"{stock}: RSI, MACD", end=" ")
 
 
 @timeit
@@ -108,6 +107,7 @@ def load_all_calc():
     """
     for stock in stocklist:
         load_calc(stock)
+        update_stoch(stock)
     print(f"{len(stocklist)} stocks")
 
 
@@ -122,15 +122,14 @@ def update_calc(stock):
     try:
         rsi_nexts = update_rsi(stock, last_calc['rsi'])
         data.update_rsi(stock, rsi_nexts)
-        print(f"{stock}_rsi", end=" ")
     except ValueError as ex:
         print(ex)
     try:
         macd_nexts = update_macd(stock, last_calc['macd'])
         data.update_macd(stock, macd_nexts)
-        print(f"{stock}_macd", end=" ")
     except ValueError as ex:
         print(ex)
+    print(f"{stock}: RSI/MACD", end=" ")
 
 
 def update_rsi(stock, prev):
@@ -171,10 +170,21 @@ def update_macd(stock, prev):
 
 
 @timeit
+def update_stoch(stock):
+    """
+    Updates the stochastic calculation to stoch table of provided stock till the
+    data avaialble in stock table
+    """
+    stoch_calc.calculate(stock)
+    print(f"{stock}_stoch", end=" ")
+
+
+@timeit
 def update_all_calc():
     """Updates calc for all stocks"""
     for stock in stocklist:
         update_calc(stock)
+        update_stoch(stock)
     print(f"{len(stocklist)} stocks")
 
 
@@ -206,6 +216,7 @@ def recalculate(stock):
     """Recalculates the rsi and macd based on data in stock tables"""
     data.clear_rsi_macd(stock)
     load_calc(stock)
+    stoch_calc.recalculate(stock)
 
 
 @timeit
