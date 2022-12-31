@@ -8,7 +8,10 @@ select f.timestamp,
     f.low_low,
     f.cl_ll,
     f.hh_ll,
-    f.cl_ll / f.hh_ll * 100 as per_k
+    case 
+        when f.hh_ll <> 0 then f.cl_ll / f.hh_ll * 100 
+        else null 
+    end as per_k
 from (
         select t1.timestamp,
             t1.high,
