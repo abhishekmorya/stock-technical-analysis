@@ -22,4 +22,4 @@ def recalculate(stock):
     """
     data.clear_stoch_calc(stock)
     calculate(stock)
-    print("{stock} STOCH", end=" ")
+    print(f"{stock} STOCH", end=" ")
